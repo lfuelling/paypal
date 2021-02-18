@@ -1,6 +1,6 @@
 package de.micromata.paypal.data;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class PaymentUpdate {
     public static enum Operation {
@@ -9,9 +9,9 @@ public class PaymentUpdate {
 
     private final Operation op;
     private final String path;
-    private final ArrayList<? extends Updatable> value;
+    private final List<? extends Updatable> value;
 
-    public PaymentUpdate(Operation op, String path, ArrayList<? extends Updatable> value) {
+    public PaymentUpdate(Operation op, String path, List<? extends Updatable> value) {
         this.op = op;
         this.path = path;
         this.value = value;
@@ -25,7 +25,7 @@ public class PaymentUpdate {
         return path;
     }
 
-    public ArrayList<? extends Updatable> getValue() {
+    public List<? extends Updatable> getValue() {
         return value;
     }
 }
