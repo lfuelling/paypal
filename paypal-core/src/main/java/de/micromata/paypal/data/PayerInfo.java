@@ -3,7 +3,7 @@ package de.micromata.paypal.data;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import de.micromata.paypal.Utils;
 
-public class PayerInfo {
+public class PayerInfo implements Updatable {
     private String email, firstName, lastName, payerId, countryCode;
     private ShippingAddress shippingAddress;
 

@@ -1,8 +1,7 @@
 package de.micromata.paypal;
 
-import de.micromata.paypal.data.AccessTokenResponse;
-import de.micromata.paypal.data.Payment;
-import de.micromata.paypal.data.Payments;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.micromata.paypal.data.*;
 import de.micromata.paypal.http.HttpsClient;
 import de.micromata.paypal.http.MimeType;
 import de.micromata.paypal.http.QueryParamBuilder;
@@ -12,17 +11,18 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.List;
 
 /**
  * Provides PayPal calls and transforms requests and responses to Java POJO's.
  */
 public class PayPalConnector {
-    private static Logger log = LoggerFactory.getLogger(PayPalConnector.class);
+    private static final Logger log = LoggerFactory.getLogger(PayPalConnector.class);
 
     /**
      * Create a payment in PayPal and get the information from PayPal including the redirect url for th user.
      *
-     * @param config config contains the PayPal credentials and return urls.
+     * @param config  config contains the PayPal credentials and return urls.
      * @param payment payment to publish / create.
      * @return the created payment understood, processed and returned by PayPal.
      * @throws PayPalRestException Will be thrown if any exception occurs.
@@ -48,7 +48,7 @@ public class PayPalConnector {
     }
 
     /**
-     * @param config config contains the required PayPal credentials.
+     * @param config    config contains the required PayPal credentials.
      * @param paymentId id of the payment to query.
      * @return The payment returned by PayPal, if found.
      * @throws PayPalRestException Will be thrown if any exception occurs.
@@ -102,9 +102,9 @@ public class PayPalConnector {
     /**
      * After finishing the payment by the user on the PayPal site, we have to execute this payment as a last step.
      *
-     * @param config needed for PayPal credentials.
+     * @param config    needed for PayPal credentials.
      * @param paymentId the payment id of the payment to execute.
-     * @param payerId the id of the payer approved the payment.
+     * @param payerId   the id of the payer approved the payment.
      * @return The returned PaymentExecuted contain everything related to this payment, such as id, payer, refund urls etc.
      * @throws PayPalRestException Will be thrown if any exception occurs.
      */
@@ -128,6 +128,35 @@ public class PayPalConnector {
     }
 
     /**
+     * This method can be used to update a payment (for example when using PayPal PLUS)
+     * using a PATCH request and an operations JSON as described on this page: https://developer.paypal.com/docs/paypal-plus/germany/integrate/update-payment-resource/
+     *
+     * @param config    the PayPal config
+     * @param paymentId the id of the payment to update
+     * @param updates   the updates that should be done for the payment
+     * @return the updated payment
+     * @throws PayPalRestException in case of an error
+     * @see Updatable
+     */
+    public static Payment updatePayment(PayPalConfig config, String paymentId, List<PaymentUpdate> updates) throws PayPalRestException {
+        try {
+            String url = getUrl(config, "/v1/payments/payment/" + paymentId);
+            log.info("Update payment: paymentId=" + paymentId);
+            String response = doPatchCall(config, url, new ObjectMapper().writeValueAsString(updates));
+            if (log.isDebugEnabled()) log.debug("Response: " + response);
+            Payment approval = JsonUtils.fromJson(Payment.class, response);
+            if (approval == null) {
+                throw new PayPalRestException("Error while updating payment: " + response);
+            }
+            approval.setOriginalPayPalResponse(response);
+            log.info("Payment updated: " + JsonUtils.toJson(approval));
+            return approval;
+        } catch (Exception ex) {
+            throw new PayPalRestException("Error while updating payment: " + ex.getMessage(), ex);
+        }
+    }
+
+    /**
      * You may use the returned access token for doing PayPal calls inside your web pages.
      * <br>
      * Please, never ever use the PayPal credentials (client_id and secret) directly in your web pages.
@@ -140,6 +169,7 @@ public class PayPalConnector {
      * <br>
      * Todo: You should refresh tokens x seconds before expiration:
      * https://developer.paypal.com/docs/integration/paypal-here/merchant-onboarding/permissions/#permissions-for-transaction-processing
+     *
      * @param config config with PayPal credentials.
      * @return AccessTokenResponse containing token and expire time.
      * @throws PayPalRestException Will be thrown if any exception occurs.
@@ -165,6 +195,16 @@ public class PayPalConnector {
 
     private static String doPostCall(PayPalConfig config, String url, String body, String accessToken) throws IOException, MalformedURLException {
         HttpsClient httpsClient = createHttpsClient(config, accessToken, url, HttpsClient.Mode.POST);
+        httpsClient.setContentType(MimeType.JSON);
+        return httpsClient.send(body);
+    }
+
+    private static String doPatchCall(PayPalConfig config, String url, String body) throws IOException, MalformedURLException {
+        return doPatchCall(config, url, body, null);
+    }
+
+    private static String doPatchCall(PayPalConfig config, String url, String body, String accessToken) throws IOException, MalformedURLException {
+        HttpsClient httpsClient = createHttpsClient(config, accessToken, url, HttpsClient.Mode.PATCH);
         httpsClient.setContentType(MimeType.JSON);
         return httpsClient.send(body);
     }

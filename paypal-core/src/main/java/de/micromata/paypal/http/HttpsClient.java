@@ -7,13 +7,14 @@ import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
  * Handles all the https requests including the pooling and re-usage of connections.
  */
 public class HttpsClient {
-    public enum Mode {POST, GET}
+    public enum Mode {POST, GET, PATCH}
 
     private static Logger log = LoggerFactory.getLogger(HttpsClient.class);
 
@@ -55,13 +56,15 @@ public class HttpsClient {
     public String send(String body) throws IOException {
         if (body == null && mode == Mode.POST) {
             throw new IllegalArgumentException("body can't be null for POST calls.");
+        } else if (body == null && mode == Mode.PATCH) {
+            throw new IllegalArgumentException("body can't be null for PATCH calls.");
         } else if (body != null && mode == Mode.GET) {
             throw new IllegalArgumentException("body must be null for GET calls.");
         }
         HttpURLConnection conn = getConnection();
         //if (log.isDebugEnabled()) log.debug(mode.name() + " call '" + url + "' with body: " + body);
-        if (mode == Mode.POST) {
-            byte[] data = body.getBytes("UTF-8");
+        if (mode == Mode.POST || mode == Mode.PATCH) {
+            byte[] data = body.getBytes(StandardCharsets.UTF_8);
             conn.setRequestProperty("Content-Length", String.valueOf(data.length));
             conn.setDoOutput(true);
             try (OutputStream os = conn.getOutputStream()) {

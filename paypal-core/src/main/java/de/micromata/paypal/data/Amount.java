@@ -2,7 +2,7 @@ package de.micromata.paypal.data;
 
 import java.math.BigDecimal;
 
-public class Amount {
+public class Amount implements Updatable {
     private String currency;
     private Details details = new Details();
 
