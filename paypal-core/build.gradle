@@ -7,20 +7,20 @@ buildscript {
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id 'signing'
+    //id 'signing'
 }
 
 description = 'paypal-core'
 
 dependencies {
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.9.7'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.9.7'
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.9.7'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.9.7'
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.7'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.7'
 
-    testCompile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.25'
+    testImplementation group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.25'
 }
 task sourcesJar(type: Jar) {
     from sourceSets.main.allJava
@@ -76,10 +76,10 @@ publishing {
     }
 }
 
-signing {
+/*signing {
     useGpgCmd()
     sign publishing.publications.mavenJava
-}
+}*/
 
 
 javadoc {

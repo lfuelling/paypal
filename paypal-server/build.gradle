@@ -7,15 +7,15 @@ buildscript {
 }
 
 dependencies {
-    compile project(':paypal-core')
+    implementation project(':paypal-core')
     // https://mvnrepository.com/artifact/commons-cli/commons-cli
-    compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
 
-    compile group: 'org.eclipse.jetty', name: 'jetty-server', version: '9.4.12.v20180830'
-    compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version: '9.4.12.v20180830'
-    compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.25'
+    implementation group: 'org.eclipse.jetty', name: 'jetty-server', version: '9.4.12.v20180830'
+    implementation group: 'org.eclipse.jetty', name: 'jetty-servlet', version: '9.4.12.v20180830'
+    implementation group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.25'
 
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
 }
 
 apply plugin: 'application'

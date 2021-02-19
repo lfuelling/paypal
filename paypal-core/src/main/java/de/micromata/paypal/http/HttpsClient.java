@@ -28,14 +28,13 @@ public class HttpsClient {
 
     /**
      * It doesn't matter if you re-use this class for same urls or if you create new objects of this class.
-     * The underlaying {@link URL#openConnection()} does the connection pooling and re-usage for us.
+     * The underlying {@link URL#openConnection()} does the connection pooling and re-usage for us.
      * @param url Url for the request, e. g. "https://api.sandbox.paypal.com/v1/payments/payment".
      * @param mode {@link Mode#POST} {@link Mode#GET}
      */
     public HttpsClient(String url, Mode mode) {
         this.url = url;
         this.mode = mode;
-
     }
 
     /**
