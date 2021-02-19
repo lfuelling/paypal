@@ -9,6 +9,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
@@ -70,7 +71,7 @@ public class HttpsClient {
 
         try {
             HttpResponse<String> res = client.send(req, HttpResponse.BodyHandlers.ofString());
-            if(res.statusCode() != 200 || res.statusCode() != 201) {
+            if(res.statusCode() != 200 && res.statusCode() != 201) {
                 throw new RuntimeException("Failed! Response code: " + res.statusCode());
             }
             return res.body();
