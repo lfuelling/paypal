@@ -6,7 +6,11 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
@@ -60,28 +64,18 @@ public class HttpsClient {
         } else if (body != null && mode == Mode.GET) {
             throw new IllegalArgumentException("body must be null for GET calls.");
         }
-        HttpURLConnection conn = getConnection();
-        //if (log.isDebugEnabled()) log.debug(mode.name() + " call '" + url + "' with body: " + body);
-        if (mode == Mode.POST || mode == Mode.PATCH) {
-            byte[] data = body.getBytes(StandardCharsets.UTF_8);
-            conn.setRequestProperty("Content-Length", String.valueOf(data.length));
-            conn.setDoOutput(true);
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(data);
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest req = getRequest(body);
+
+        try {
+            HttpResponse<String> res = client.send(req, HttpResponse.BodyHandlers.ofString());
+            if(res.statusCode() != 200 || res.statusCode() != 201) {
+                throw new RuntimeException("Failed! Response code: " + res.statusCode());
             }
-        }
-        if (conn.getResponseCode() != HttpURLConnection.HTTP_CREATED &&
-                conn.getResponseCode() != HttpsURLConnection.HTTP_OK) {
-            throw new RuntimeException("Failed : HTTP error code : "
-                    + conn.getResponseCode());
-        }
-        StringWriter out = new StringWriter();
-        try (InputStreamReader is = new InputStreamReader(conn.getInputStream())) {
-            copy(is, out);
-            // not disconnect, leave it to HttpURLConnection
-            //conn.disconnect();
-            //if (log.isDebugEnabled()) log.debug("Response: " + out.toString());
-            return out.toString();
+            return res.body();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Error! Interrupted!", e);
         }
     }
 
@@ -132,30 +126,34 @@ public class HttpsClient {
         return this;
     }
 
-    private HttpURLConnection getConnection() throws IOException {
-        URL turl = new URL(url);
-        HttpsURLConnection conn = (HttpsURLConnection) turl.openConnection();
-        conn.setRequestMethod(mode == Mode.GET ? "GET" : "POST");
-        conn.setDefaultUseCaches(false);
+    private HttpRequest getRequest(String body) {
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+                .uri(URI.create(url));
+        if(mode == Mode.GET) {
+            requestBuilder.method(mode.name(), HttpRequest.BodyPublishers.noBody());
+        } else {
+            requestBuilder.method(mode.name(), HttpRequest.BodyPublishers.ofString(body));
+        }
         if (this.keepAlive) {
-            conn.setRequestProperty("keep-alive", "true");
+            requestBuilder.header("keep-alive", "true");
         }
         if (authorization != null) {
-            conn.setRequestProperty("Authorization", authorization);
+            requestBuilder.header("Authorization", authorization);
         }
         if (acceptLanguage != null) {
             if (log.isDebugEnabled()) log.debug("Accept-Language: " + acceptLanguage);
-            conn.setRequestProperty("Accept-Language", acceptLanguage);
+            requestBuilder.header("Accept-Language", acceptLanguage);
         }
         if (contentType != null) {
             if (log.isDebugEnabled()) log.debug("Content-Type: " + contentType.asString());
-            conn.setRequestProperty("Content-Type", contentType.asString());
+            requestBuilder.header("Content-Type", contentType.asString());
         }
         if (accept != null) {
             if (log.isDebugEnabled()) log.debug("Accept: " + accept.asString());
-            conn.setRequestProperty("Accept", accept.asString());
+            requestBuilder.header("Accept", accept.asString());
         }
-        return conn;
+
+        return requestBuilder.build();
     }
 
     private static final int BUFFER_SIZE = 4 * 1024;
